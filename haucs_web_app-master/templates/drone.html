@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+<title>Drone</title>
+<!-- <meta http-equiv="refresh" content="10"> -->
+<link rel="stylesheet" href="/static/css/sensors.css">
+
+{% endblock %}
+
+{% block body %}
+
+<body class="sensor-body">
+  <h2>{{ id }}</h2>
+  <script>
+
+    // Function to update time
+    function updateTime() {
+        // Get the current time
+        var now = new Date();
+        // Display the time in seconds
+        document.getElementById('time').innerHTML = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+    }
+    // Update the time every second
+    setInterval(updateTime, 100);
+  </script>
+  <br>
+  <p>Current Time: <span id="time"></span></p>
+
+  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script> -->
+  <!-- <script src="{{ url_for('static', filename='js/firebase.js') }}"></script> -->
+  <!-- <script>setInterval(updateData, 1000);</script> -->
+
+  <script>
+    // Assuming your JSON file is located at `/data.json` on your server
+    const jsonFilePath = "{{ url_for('static', filename='json/SPLASHY_1.json') }}";
+    const jsonFilePath2 = "{{ url_for('static', filename='json/SPLASHY_2.json') }}";
+    const currentUrl = window.location.href;
+    var jsonFile = jsonFilePath;
+    if ("{{ id }}" == "SPLASHY_2"){jsonFile = jsonFilePath2;}
+    function updateData2(){
+      // dummy fetch, stupid
+      fetch(currentUrl).then(response => {if (!response.ok) {throw new Error('Network response was not ok');
+          } return response.json(); }) .then(data => { console.log(data); }).catch(error => {
+          console.error('There has been a problem with your fetch operation:', error); });
+
+      fetch(jsonFile)
+          .then(response => {
+              // Check if the request was successful
+              if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.json(); // Parse the response body as JSON
+          })
+          .then(data => {
+              // the output that cause error
+              // jdata = JSON.parse('{'data': {'alt': 6.43, 'current': 0.01, 'flight_mode': 'RTL', 'flight_status': 'landed', 'hdg': 166.21, 'lat': 27.5352821, 'lon': -80.3516757, 'msg': 'PreArm: Motor Emergency Stopped', 'msg_severity': 2, 'on_water': False, 'p_DO': 0.0, 'p_pres': 1017.49, 'p_temp': 23.7, 'vel': 0.17, 'voltage': 15.527}, 'time': {'BATTERY_STATUS': 97.07, 'EXTENDED_SYS_STATE': 97.05, 'GLOBAL_POSITION_INT': 96.94, 'NAMED_VALUE_FLOAT': 97.18}}');
+              
+              // swap below to change from data (direct data) to json file
+              // var jdata = JSON.parse('{{ data | tojson }}');
+              var jdata = data
+              document.getElementById('msg').textContent = jdata.data.msg;
+              document.getElementById('flight_mode').textContent = jdata.data.flight_mode;
+              document.getElementById('flight_status').textContent = jdata.data.flight_status;
+              document.getElementById('on_water').textContent = jdata.data.on_water;
+              document.getElementById('vel').textContent = jdata.data.vel;
+              document.getElementById('alt').textContent = jdata.data.alt;
+              document.getElementById('lat').textContent = jdata.data.lat;
+              document.getElementById('lon').textContent = jdata.data.lon;
+              document.getElementById('msg').textContent = jdata.data.msg;
+              document.getElementById('hdg').textContent = jdata.data.hdg;
+              document.getElementById('GLOBAL_POSITION_INT').textContent = jdata.time.GLOBAL_POSITION_INT;
+              document.getElementById('voltage').textContent = jdata.data.voltage;
+              document.getElementById('current').textContent = jdata.data.current;
+              document.getElementById('BATTERY_STATUS').textContent = jdata.time.BATTERY_STATUS;
+              document.getElementById('NAMED_VALUE_FLOAT').textContent = jdata.time.NAMED_VALUE_FLOAT;
+              document.getElementById('p_DO').textContent = jdata.data.p_DO;
+              document.getElementById('p_pres').textContent = jdata.data.p_pres;
+              document.getElementById('p_temp').textContent = jdata.data.p_temp;
+          })
+          .catch(error => {
+              // If there's an error, log it to the console
+              console.error('Could not fetch or parse the JSON file:', error);
+          });
+      }
+      setInterval(updateData2, 500);
+  </script>
+  
+  <ul> 
+        <br>
+        <li><span id="msg"></span></li>
+        <br>
+        <h2>Flight Information</h2>
+        <li>mode: <span id="flight_mode"></span></li>
+        <li>status:  <span id="flight_status"></span></li>
+        <li>on water: <span id="on_water"></span></li>
+        <br>
+        <h2>Position Information</h2>
+        <li>velocity: <span id="vel"></span> m/s</li>
+        <li>altitude: <span id="alt"></span> m</li>
+        <li>latitude: <span id="lat"></span></li>
+        <li>longitude: <span id="lon"></span></li>
+        <li>heading: <span id="hdg"></span> deg</li>
+        <li>last update: <span id="GLOBAL_POSITION_INT"></span> s</li>
+        <br>
+        <h2>Vehicle Health</h2>
+        <li>battery voltage: <span id="voltage"></span></li>
+        <li>battery current: <span id="current"></span></li>
+        <li>last update: <span id="BATTERY_STATUS"></span> s</li>
+        <br>
+        <h2>Payload</h2>
+        <li>DO: <span id="p_DO"></span> mV</li>
+        <li>pressure: <span id="p_pres"></span> hPa</li>
+        <li>temperature: <span id="p_temp"></span> c</li>
+        <li>last update: <span id="NAMED_VALUE_FLOAT"></span> s</li>
+        
+  </ul>
+</body>
+
+{% endblock %}

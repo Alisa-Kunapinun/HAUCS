@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+<title>About Us</title>
+<link rel="stylesheet" href="static/css/about.css">
+
+{% endblock %}
+
+{% block body %}
+
+<section class="about">
+  <h1>About the Application</h1>
+
+  <div class="row">
+      <div class="objectives">
+          <h3>Objective</h3>
+          <p>The objective of this application is to provide a centralized platform that organizes and displays data from aquaculture systems.</p>
+      </div>
+      <div class="objectives">
+          <h3>Key Features</h3>
+          <ul>
+              <li>Real-time Monitoring: Collect data from multiple sensors in different formats and consolidate it into a unified representation.</li>
+              <li>User-Friendly Dashboard: Central dashboard to display relevant metrics and parameters for easy monitoring.</li>
+              <li>Data Visualization: Transform complex data into visually appealing graphs and charts for better understanding.</li>
+              <li>Analytics and Insights: Utilize machine learning algorithms to extract meaningful patterns, outliers, and predictive trends from data.</li>
+          </ul>
+      </div>
+  </div>
+</section>
+
+{% endblock %}

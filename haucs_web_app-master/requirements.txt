@@ -1,0 +1,9 @@
+firebase-admin
+numpy
+pandas
+pytz
+gunicorn
+flask
+matplotlib
+scipy
+
