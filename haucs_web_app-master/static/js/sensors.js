@@ -309,20 +309,40 @@ function transformData(jsonData, timePeriod, isCustom, startDate, endDate) {
         const month = date.substring(4, 6);
         const day = date.substring(6, 8);
         const datetime = new Date(`${year}-${month}-${day}T${time}`);
+
+        // Ensure `jsonData[key].do` is an array of floats
+        const doValues = Array.isArray(jsonData[key].do) 
+        ? jsonData[key].do.map(value => parseFloat(value)) 
+        : [parseFloat(jsonData[key].do)];
+
+        const avg_do = doValues.reduce((sum, current) => sum + (isNaN(current) ? 0 : current), 0) / doValues.length;
+
+        const pressureValues = Array.isArray(jsonData[key].pressure) 
+            ? jsonData[key].pressure.map(value => parseFloat(value)) 
+            : [parseFloat(jsonData[key].pressure)];
+
+        const avg_pressure = pressureValues.reduce((sum, current) => sum + (isNaN(current) ? 0 : current), 0) / pressureValues.length;
+
+        const tempValues = Array.isArray(jsonData[key].temp) 
+            ? jsonData[key].temp.map(value => parseFloat(value)) 
+            : [parseFloat(jsonData[key].temp)];
+
+        const avg_temp = tempValues.reduce((sum, current) => sum + (isNaN(current) ? 0 : current), 0) / tempValues.length;
+        
         const entry = {
             datetime,
-            do: jsonData[key].do,
-            avg_do: jsonData[key].do.reduce((sum, current) => sum + parseFloat(current), 0) / jsonData[key].do.length,
+            do: doValues,
+            avg_do: avg_do,
             drone_id: jsonData[key].drone_id,
             init_do: jsonData[key].init_do,
             init_pressure: jsonData[key].init_pressure,
             lat: jsonData[key].lat,
             lng: jsonData[key].lng,
-            pid: jsonData[key].pid,
-            pressure: jsonData[key].pressure,
-            avg_pressure: jsonData[key].pressure.reduce((sum, current) => sum + parseFloat(current), 0) / jsonData[key].pressure.length,
-            temp: jsonData[key].temp,
-            avg_temp: jsonData[key].temp.reduce((sum, current) => sum + parseFloat(current), 0) / jsonData[key].temp.length,
+            pond_id: jsonData[key].pid,
+            pressure: pressureValues,
+            avg_pressure: avg_pressure,
+            temp: tempValues,
+            avg_temp: avg_temp,
             type: jsonData[key].type,
         };
         lastentry = entry;

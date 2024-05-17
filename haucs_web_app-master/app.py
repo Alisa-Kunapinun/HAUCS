@@ -164,6 +164,13 @@ def recent():
     data = db.reference("/LH_Farm/recent").get()
     return render_template('haucs_recent.html', keys=reversed(data.keys()), data=data)
 
+@app.route('/history')
+def history():
+    with open('static/json/farm_features.json', 'r') as file:
+        data = file.read()
+    
+    return render_template('history.html', data=data)
+
 @app.route('/sensor'+'<int:sensor_id>')
 def show_sensor(sensor_id):
     bmx = firebase.bmass_sensor(sensor_id, 600)
