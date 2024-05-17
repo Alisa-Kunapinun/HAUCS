@@ -3,119 +3,178 @@
 {% block head %}
 
 <title>Drone</title>
-<!-- <meta http-equiv="refresh" content="10"> -->
-<link rel="stylesheet" href="/static/css/sensors.css">
+
+<link rel="stylesheet" href="/static/css/drone.css">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+<script src="{{ url_for('static', filename='js/drone.js') }}"></script>
+<script>
+    const drone_id = {{ id|tojson }};
+    window.onload = function(){
+        document.getElementById('GCS_HBEAT').value = 0;
+        updateData();
+        updateWeather();
+        setInterval(updateData, 1000);
+        setInterval(updateWeather, 10000);
+        GMap.loadMap();
+    }
+
+    function updateWeather(){
+    var d = new Date();
+    var milli = d.getTime();
+    fetch('https://api.sensestream.org/observations/measurements/hboi_aqua_1/0?start=' 
+            + (milli - 6*100000) + '&end=' + milli)
+        .then(response => response.json())
+        .then(json => {
+        if (json) {
+            var idx = json.result.length - 1;
+            if (idx >= 0){
+            wind_dir = json.result[idx].readings[2];
+            wind_spd = json.result[idx].readings[3];
+            document.getElementById('wind_dir').textContent = wind_dir;
+            document.getElementById('wind_spd').textContent = wind_spd;
+            }
+        }
+        })
+    }
+</script>
 
 {% endblock %}
 
 {% block body %}
 
+<!-- <div id="googleMap" style="width:50%;height:400px;"></div> -->
+
 <body class="sensor-body">
-  <h2>{{ id }}</h2>
-  <script>
+    <h2 style="text-align: center">{{ id }}</h2>
+    <div class="row">
+        <div class="column1">
+            <h2><span id='GCS_HBEAT'></span></h2>
+            <table class="table">
+            <tbody>
+                <th scope="rowgroup"><h2>Flight Overview</h2></th>
+                <tr>
+                <td>mode</td>
+                <td><span id="flight_mode"></span></td>
+                </tr>
+                <tr>
+                <td>arm state</td>
+                <td><span id="arm_state"></span></td>
+                </tr>
+                <tr>
+                <td>on water</td>
+                <td><span id="on_water"></span></td>
+                </tr>
+                <tr>
+                <td>mission time (mm:ss)</td>
+                <td><span id="mission_time"></span></td>
+                </tr>
+                <tr>
+                <td>flight time</td>
+                <td><span id="flight_time"></span></td>
+                </tr>
+                <tr>
+                <td>total flight time</td>
+                <td><span id="battery_time"></span></td>
+                </tr>
+            </tbody>
+            
+            <tbody>
+                <th scope="rowgroup"><h2><span id='GLOBAL_POSITION_INT'></span></h2></th>
+                <tr>
+                <td>velocity (m/s)</td>
+                <td><span id="vel"></span></td>
+                </tr>
+                <tr>
+                <td>altitude (m)</td>
+                <td><span id="alt"></span></td>
+                </tr>
+                <tr>
+                <td>latitude</td>
+                <td><span id="lat"></span></td>
+                </tr>
+                <tr>
+                <td>longitude</td>
+                <td><span id="lon"></span></td>
+                </tr>
+                <tr>
+                <td>heading</td>
+                <td><span id="hdg"></span></td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
+    
+        <div class="column1">
+            <table class="table">
+            <tbody>
+                <th scope="rowgroup"><h2><span id='BATTERY_STATUS'></span></h2></th>
+                <tr>
+                <td>voltage (V)</td>
+                <td><span id="voltage"></span></td>
+                </tr>
+                <tr>
+                <td>current (A)</td>
+                <td><span id="current"></span></td>
+                </tr>
+                <tr>
+                <td>current consumed (mAh)</td>
+                <td><span id="mah_consumed"></span></td>
+                </tr>
+                <tr>
+                <td>battery remaining</td>
+                <td><span id="battery_remaining"></span>%</td>
+                </tr>
+                <tr>
+                <tr>
+                <td>time remaining (s)</td>
+                <td><span id="time_remaining"></span></td>
+            </tbody>
+            <tbody>
+                <th scope="rowgroup"><h2><span id='NAMED_VALUE_FLOAT'></span></h2></th>
+                <tr>
+                <td>DO (V)</td>
+                <td><span id="p_DO"></span></td>
+                </tr>
+                <tr>
+                <td>pressure (hPa)</td>
+                <td><span id="p_pres"></span></td>
+                </tr>
+                <tr>
+                <td>temperature (C)</td>
+                <td><span id="p_temp"></span></td>
+                </tr>
+            </tbody>
+            <tbody>
+                <th scope="rowgroup"><h2>Weather</h2></th>
+                <tr>
+                <td>Wind Direction</td>
+                <td><span id="wind_dir"></span></td>
+                </tr>
+                <tr>
+                <td>Wind Speed (m/s)</td>
+                <td><span id="wind_spd"></span></td>
+                </tr>
+            </tbody>
+            </table>
+            <h2>Messages</h2>
+            <span id="msg"></span>
+        </div>  
 
-    // Function to update time
-    function updateTime() {
-        // Get the current time
-        var now = new Date();
-        // Display the time in seconds
-        document.getElementById('time').innerHTML = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-    }
-    // Update the time every second
-    setInterval(updateTime, 100);
-  </script>
-  <br>
-  <p>Current Time: <span id="time"></span></p>
-
-  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script> -->
-  <!-- <script src="{{ url_for('static', filename='js/firebase.js') }}"></script> -->
-  <!-- <script>setInterval(updateData, 1000);</script> -->
-
-  <script>
-    // Assuming your JSON file is located at `/data.json` on your server
-    const jsonFilePath = "{{ url_for('static', filename='json/SPLASHY_1.json') }}";
-    const jsonFilePath2 = "{{ url_for('static', filename='json/SPLASHY_2.json') }}";
-    const currentUrl = window.location.href;
-    var jsonFile = jsonFilePath;
-    if ("{{ id }}" == "SPLASHY_2"){jsonFile = jsonFilePath2;}
-    function updateData2(){
-      // dummy fetch, stupid
-      fetch(currentUrl).then(response => {if (!response.ok) {throw new Error('Network response was not ok');
-          } return response.json(); }) .then(data => { console.log(data); }).catch(error => {
-          console.error('There has been a problem with your fetch operation:', error); });
-
-      fetch(jsonFile)
-          .then(response => {
-              // Check if the request was successful
-              if (!response.ok) {
-                  throw new Error(`HTTP error! status: ${response.status}`);
-              }
-              return response.json(); // Parse the response body as JSON
-          })
-          .then(data => {
-              // the output that cause error
-              // jdata = JSON.parse('{'data': {'alt': 6.43, 'current': 0.01, 'flight_mode': 'RTL', 'flight_status': 'landed', 'hdg': 166.21, 'lat': 27.5352821, 'lon': -80.3516757, 'msg': 'PreArm: Motor Emergency Stopped', 'msg_severity': 2, 'on_water': False, 'p_DO': 0.0, 'p_pres': 1017.49, 'p_temp': 23.7, 'vel': 0.17, 'voltage': 15.527}, 'time': {'BATTERY_STATUS': 97.07, 'EXTENDED_SYS_STATE': 97.05, 'GLOBAL_POSITION_INT': 96.94, 'NAMED_VALUE_FLOAT': 97.18}}');
-              
-              // swap below to change from data (direct data) to json file
-              // var jdata = JSON.parse('{{ data | tojson }}');
-              var jdata = data
-              document.getElementById('msg').textContent = jdata.data.msg;
-              document.getElementById('flight_mode').textContent = jdata.data.flight_mode;
-              document.getElementById('flight_status').textContent = jdata.data.flight_status;
-              document.getElementById('on_water').textContent = jdata.data.on_water;
-              document.getElementById('vel').textContent = jdata.data.vel;
-              document.getElementById('alt').textContent = jdata.data.alt;
-              document.getElementById('lat').textContent = jdata.data.lat;
-              document.getElementById('lon').textContent = jdata.data.lon;
-              document.getElementById('msg').textContent = jdata.data.msg;
-              document.getElementById('hdg').textContent = jdata.data.hdg;
-              document.getElementById('GLOBAL_POSITION_INT').textContent = jdata.time.GLOBAL_POSITION_INT;
-              document.getElementById('voltage').textContent = jdata.data.voltage;
-              document.getElementById('current').textContent = jdata.data.current;
-              document.getElementById('BATTERY_STATUS').textContent = jdata.time.BATTERY_STATUS;
-              document.getElementById('NAMED_VALUE_FLOAT').textContent = jdata.time.NAMED_VALUE_FLOAT;
-              document.getElementById('p_DO').textContent = jdata.data.p_DO;
-              document.getElementById('p_pres').textContent = jdata.data.p_pres;
-              document.getElementById('p_temp').textContent = jdata.data.p_temp;
-          })
-          .catch(error => {
-              // If there's an error, log it to the console
-              console.error('Could not fetch or parse the JSON file:', error);
-          });
-      }
-      setInterval(updateData2, 500);
-  </script>
-  
-  <ul> 
-        <br>
-        <li><span id="msg"></span></li>
-        <br>
-        <h2>Flight Information</h2>
-        <li>mode: <span id="flight_mode"></span></li>
-        <li>status:  <span id="flight_status"></span></li>
-        <li>on water: <span id="on_water"></span></li>
-        <br>
-        <h2>Position Information</h2>
-        <li>velocity: <span id="vel"></span> m/s</li>
-        <li>altitude: <span id="alt"></span> m</li>
-        <li>latitude: <span id="lat"></span></li>
-        <li>longitude: <span id="lon"></span></li>
-        <li>heading: <span id="hdg"></span> deg</li>
-        <li>last update: <span id="GLOBAL_POSITION_INT"></span> s</li>
-        <br>
-        <h2>Vehicle Health</h2>
-        <li>battery voltage: <span id="voltage"></span></li>
-        <li>battery current: <span id="current"></span></li>
-        <li>last update: <span id="BATTERY_STATUS"></span> s</li>
-        <br>
-        <h2>Payload</h2>
-        <li>DO: <span id="p_DO"></span> mV</li>
-        <li>pressure: <span id="p_pres"></span> hPa</li>
-        <li>temperature: <span id="p_temp"></span> c</li>
-        <li>last update: <span id="NAMED_VALUE_FLOAT"></span> s</li>
-        
-  </ul>
+        <div class="column2">
+            <div id="googleMap" style="width:100%;height:500px;"></div>
+        </div>
+    </div>
+    <div class="buttons">
+        <button id="btnResetPath" class="button" onclick="btnResetPath_click()">Reset Paths</button>
+        <button id="btnToggleView" class="button" onclick="btnToggleView_click(this.id)">Centered</button>
+        <button id="btnSave" class="button" onclick="btnSave_click(this.id)">Save Position</button>
+        <button id="btnLoad" class="button" onclick="btnLoad_click()">Load Positions</button>
+        <input type="file" id="fileInput" style="display: none;" onchange="loadPositions(event)">
+    </div>
+    <!-- <canvas id="graphic" width="400" height="400"></canvas> -->
 </body>
+
+<!-- simple map script -->
+<!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQZZk_BUDTJwYN2TCsPwVJGLxkiMiSzPg&callback=myMap"></script> -->
 
 {% endblock %}

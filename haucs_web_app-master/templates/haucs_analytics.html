@@ -10,11 +10,49 @@
 
 <link rel="stylesheet" href="static/css/sensors.css">
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/min/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+<script src="{{ url_for('static', filename='js/sensors.js') }}"></script>
 {% endblock %}
 
 {% block body %}
 
 <body class="sensor-body">
+    <script>
+        function getDate(inputdate){
+        var today = new Date();
+        document.getElementById(inputdate).value = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+    }
+
+    function updateData(){
+        fetch('/data/LH_Farm pond_' + "{{ pond_id }}")
+        .then(response => response.json())
+        .then(json => {
+            const timePeriod = document.getElementById('timePeriod').value;
+            const deviceType = document.getElementById('deviceType').value;
+            const predefined = document.getElementById('predefined');
+            const custom = document.getElementById('custom');
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (custom.checked) {
+                if (!startDate || !endDate) {
+                    // alert("Please select both start and end dates.");
+                    return;
+                }
+
+                if (new Date(startDate) > new Date(endDate)) {
+                    // alert("Start date cannot be greater than end date.");
+                    return;
+                }
+            }
+
+            UpdateChart(timePeriod, deviceType, custom.checked, startDate, endDate, json);
+        });
+    }
+    setInterval(updateData, 10000);
+    </script>
 
     <div class="pond_number">
         <h1>Pond {{pond_id}}</h1>
@@ -23,17 +61,112 @@
     <div class="data_summary">
         <h1>Data Summary</h1>
         <div>
-            <li> Dissolved Oxygen: {{last_do}}% </li>
+            <li> Dissolved Oxygen: <span id="oxygen"></span>% </li>
         </div>
-        <li>Last time of data collection: {{last_time}} on {{last_date}}</li>
-        <li>Water temperature: {{last_temp}} °F</li>
+        <li>Last time of data collection: <span id="last_time"></span> on <span id="last_date"></span></li>
+        <li>Water temperature: <span id="temperature"></span> °F</li>
+        <li>Device type: <span id="device"></span></li>
         
     </div>
+    <br>
 
-    <div class = "graph">
+    <!-- <div class = "graph">
         <h1>Temperature and DO<br>Collected over the last 24 hours</h1>
         <img src="{{ url_for('static', filename='graphs/haucs/' + pond_id|string + '_temp_do_graph.png')}}">
+    </div> -->
+
+    <div class="combobox-container">
+        <label for="deviceType" class="combobox-label">Select Device Type:</label>
+        <select id="deviceType" class="styled-combobox" onchange="updateData()">
+            <option value="all" selected>All Devices</option>
+            <option value="user">Manual Input</option>
+            <option value="truck">Truck</option>
+            <option value="splashdrone">Drone</option>
+        </select>
     </div>
+    <br>
+    <div class="combobox-container">
+        <label for="timePeriod" class="combobox-label">Select Time Period:</label>
+    </div>
+    
+    <div class="combobox-container">
+        <div class="combobox-container">
+            <input type="radio" id="predefined" name="timePeriodType" value="predefined" checked onchange="toggleTimePeriodSelection()">
+            <label for="predefined">&nbsp;Predefined</label>
+            <select id="timePeriod" class="styled-combobox" onchange="updateData()">
+                <option value="all" selected>All Data</option>
+                <option value="24h">Last 24 Hours</option>
+                <option value="3d">Past 3 Days</option>
+                <option value="7d">Past 7 Days</option>
+                <option value="2w">Past 2 Weeks</option>
+                <option value="1m">Past 1 Month</option>
+                <option value="3m">Past 3 Months</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="combobox-container">
+        <div class="combobox-container">
+            <input type="radio" id="custom" name="timePeriodType" value="custom" onchange="toggleTimePeriodSelection()">
+            <label for="custom">&nbsp;Custom Date Range</label>
+            <label>From date:</label>
+            <input type="date" id="startDate" class="styled-combobox" onchange="updateData()" disabled>
+            <label>&nbsp;To date:</label>
+            <input type="date" id="endDate" class="styled-combobox" onchange="updateData()" disabled>
+        </div>
+    </div>
+    <br>
+
+    <div class="row">
+        <div class="column1">
+            <h2>Dissolved Oxygen</h2>
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td><canvas id="myChart"></canvas></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="column2">
+            <h2>Temperature</h2>
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td><canvas id="myChart2"></canvas></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        <table id="data-table" class="data-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Dissolved Oxygen (%)</th>
+                    <th>Temperature (°F)</th>
+                    <th>Pressure</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Device Type</th>
+                </tr>
+            </thead>
+            <tbody id="data-table-body">
+                <!-- Dynamic rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // update after load all html done, unless caught error.
+        getDate("startDate");
+        getDate("endDate");
+        document.getElementById('startDate').max = document.getElementById('endDate').value;
+        document.getElementById('endDate').min = document.getElementById('startDate').value;
+        updateData();
+    </script>
 
 </body>
 

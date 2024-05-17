@@ -1,0 +1,142 @@
+/* Container for flexboxes */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Setup initial state for columns */
+.column1 {
+  flex: 25%; /* 25% of the row's width */
+  padding: 20px;
+  box-sizing: border-box; /* Includes padding in the width calculation */
+}
+.column2 {
+  flex: 50%; /* 50% of the row's width */
+  padding: 20px;
+  box-sizing: border-box; /* Includes padding in the width calculation */
+}
+.table {
+  width: 100%; /* Full width of its container */
+  text-align: left;
+}
+
+/* Table column widths relative to .column1 */
+td:nth-child(1) {
+  width: 67%;
+}
+
+td:nth-child(2) {
+  width: 33%;
+}
+
+/* Responsive behaviors */
+@media screen and (min-width: 601px) {
+  .column1 {
+    flex: 25%; /* Keeps .column1 at 25% above 600px */
+  }
+  .column2 {
+    flex: 50%; /* Keeps .column2 at 50% above 600px */
+  }
+}
+
+@media screen and (max-width: 600px) and (min-width: 401px) {
+  .column1 {
+    flex: 50%; /* Each .column1 takes 50% of the row's width between 401px and 600px */
+  }
+  .column2 {
+    flex: 100%; /* .column2 takes full width at this breakpoint */
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .column1, .column2 {
+    flex: 100%;
+  }
+}
+
+.button {
+  background: #1a62d0;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin-left: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  /* box-shadow: 3px 3px #999; */
+}
+
+.button:hover {
+  background-color: #3a03ff;
+  /* box-shadow: 3px 3px #555; */
+}
+
+.button:active {
+  background-color: #1901a3;
+  /* box-shadow: 2px 2px #666; */
+  transform: translate(1px,1px);
+}
+
+#graphic {
+  margin-left: 20px;
+  margin-bottom: 20px;
+  border: 1px solid black; /* Helps see the boundaries of the canvas */
+}
+
+/* .button {
+  background: linear-gradient(to bottom, #4e9cff 0%, #1a62d0 100%);
+  border: none;
+  color: white;
+  padding: 10px 27px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin-left: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 3px 3px #999;
+}
+
+.button:hover {
+  background: linear-gradient(to bottom, #669cff 0%, #3377ff 100%);
+  box-shadow: 3px 3px #555;
+}
+
+.button:active {
+  background: linear-gradient(to bottom, #3a7bd5 0%, #1a62d0 100%); 
+  box-shadow: 2px 2px #666;
+  transform: translate(1px,1px);
+} */
+
+/* #btnResetPath {
+  background: linear-gradient(to bottom, #4e9cff 0%, #1a62d0 100%);
+}
+
+#btnResetPath:hover {
+  background: linear-gradient(to bottom, #669cff 0%, #3377ff 100%);
+}
+
+#btnResetPath:active {
+  background: linear-gradient(to bottom, #3a7bd5 0%, #1a62d0 100%);
+  box-shadow: 2px 2px #666;
+  transform: translate(1px, 1px);
+}
+
+#btnToggleView {
+  background: linear-gradient(to bottom, #3e8cef 0%, #0a52c0 100%);
+}
+
+#btnToggleView:hover {
+  background: linear-gradient(to bottom, #568cef 0%, #2367ef 100%);
+}
+
+#btnToggleView:active {
+  background: linear-gradient(to bottom, #2a6bc5 0%, #0a52c0 100%);
+  box-shadow: 2px 2px #666;
+  transform: translate(1px, 1px);
+} */
+

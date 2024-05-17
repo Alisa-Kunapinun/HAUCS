@@ -6,10 +6,10 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import dates as mdates
 import firebase_admin
-from firebase_admin import db
-from firebase_admin import credentials
+from firebase_admin import db, credentials
 import pytz
 from scipy.fft import fft, fftfreq
+import time
 
 matplotlib.use('agg')
 
@@ -57,10 +57,16 @@ def to_datetime(dates, tz_aware=True):
             print(i)
         if tz_aware:
             tz = pytz.timezone('US/Eastern')
+            # tz = pytz.timezone('UTC')
             i_dt = tz.localize(i_dt)
-
-        dt.append(i_dt)
+            # dt.append(i_dt.astimezone(pytz.timezone('US/Eastern')))
+            dt.append(i_dt)
+        else:
+            dt.append(i_dt)
     return np.array(dt)  
+
+def get_time_header():
+    return time.strftime('%Y%m%d_%H:%M:%S', time.gmtime(time.time()))
 
 
 class bmass_sensor():
@@ -125,7 +131,7 @@ class egg_sensor():
         plt.ylabel("turbidity")
         plt.xlabel("time (seconds)")
         plt.plot(x, ya, color='r')
-        plt.savefig("static/graphs/biomass/egg_eye_1_timeseries.png")
+        plt.savefig("static/graphs/egg/egg_eye_1_timeseries.png")
 
     def plot_frequency(self):
         N = 512 # make a multiple of 2
@@ -149,7 +155,7 @@ class egg_sensor():
         plt.ylim(top=80)
         plt.xlabel("Hz")
         plt.plot(freq_range, fft_a, color='r')
-        plt.savefig("static/graphs/biomass/egg_eye_1_frequency.png")
+        plt.savefig("static/graphs/egg/egg_eye_1_frequency.png")
     
     def plot_prediction(self):
         # Set date format for x-axis labels
@@ -177,7 +183,7 @@ class egg_sensor():
         plt.ylabel("turbidity")
         plt.gcf().autofmt_xdate()
         plt.gca().xaxis.set_major_formatter(date_formatter)
-        plt.savefig("static/graphs/biomass/egg_eye_1_detect.png")
+        plt.savefig("static/graphs/egg/egg_eye_1_detect.png")
 
     def plot_peakDetection(self):
         # Set date format for x-axis labels
@@ -203,7 +209,7 @@ class egg_sensor():
         plt.ylabel("Number of Peaks")
         plt.gcf().autofmt_xdate()
         plt.gca().xaxis.set_major_formatter(date_formatter)
-        plt.savefig("static/graphs/biomass/egg_eye_1_peaks.png")
+        plt.savefig("static/graphs/egg/egg_eye_1_peaks.png")
 
 
 
@@ -215,27 +221,45 @@ class pond():
         final_pressure=[]
         final_do = []
         final_temp = []
-
+        init_do = []
+        lat = []
+        lng = []
         for i in data:
-            pressure = data[i]['pressure']
-            do = data[i]['do']
-            temp = data[i]['temp']
-            high_pressure = max(pressure)
-            index_hp = pressure.index(high_pressure)
-            final_pressure.append(pressure[index_hp])
-            final_do.append(do[index_hp])
-            final_temp.append(temp[index_hp])
+            if (data[i]['type'] == 'manual') and (len(final_do) != 0):
+                final_pressure.append('nan')
+                final_do.append(data[i]['do'])
+                final_temp.append('nan')
+                init_do.append('nan')
+                lat.append('nan')
+                lng.append('nan')
+            else:
+                pressure = data[i]['pressure']
+                do = data[i]['do']
+                temp = data[i]['temp']
+                initial_do = int(data[i]['init_do'])
+                if initial_do == 0:
+                    initial_do = 0.01
+                #find highest pressure
+                high_pressure = max(pressure)
+                index_hp = pressure.index(high_pressure)
+                high_pressure = float(high_pressure)
+                #append single value for do, temp, pressure @ high pressure
+                final_pressure.append(high_pressure)
+                final_do.append(int(do[index_hp]) / initial_do * 100)
+                final_temp.append(round(float(temp[index_hp]) * (9/5) + 32, 2))
+                #append other variables
+                init_do.append(initial_do)
+                lat.append(float(data[i]['lat']))
+                lng.append(float(data[i]['lng']))
         
         self.d_dt = to_datetime(data)
-        self.heading = np.array([(data[i]['heading']) for i in data], dtype='float')
-        self.init_do = np.array([(data[i]['init_do']) for i in data], dtype='int')
-        self.init_pressure = np.array([(data[i]['init_pressure']) for i in data], dtype='float')
-        self.lat = np.array([(data[i]['lat']) for i in data], dtype='float')
-        self.lng = np.array([(data[i]['lng']) for i in data], dtype='float')
+        self.init_do = np.array(init_do, dtype='float')
+        self.lat = np.array(lat, dtype='float')
+        self.lng = np.array(lng, dtype='float')
         self.pressure = np.array(final_pressure, dtype='float')
-        self.do = (np.array(final_do, dtype='int') / self.init_do * 100).round()
-        self.temp = (np.array(final_temp, dtype='float'))*(9/5)+32
-        self.id = int(name)
+        self.do = np.array(final_do, dtype='float')
+        self.temp =np.array(final_temp, dtype='float')
+        self.id = str(name)
 
     def plot_temp_do(self, mv):
         # Set date format for x-axis labels
@@ -244,23 +268,14 @@ class pond():
         date_formatter = mdates.DateFormatter(date_fmt, tz=(pytz.timezone("US/Eastern")))
         lower = self.d_dt[-1] - timedelta(hours=24)
 
-        window = self.d_dt > lower
-        data_pts = np.count_nonzero(window)
-
-        if data_pts < mv:
-            mv=data_pts
-        print(self.d_dt[window])
         plt.figure(figsize=(12,5))
         plt.subplot(1,2,1)
-        # plt.plot(self.d_dt[window],moving_average(self.do[window],mv), 'o-',color='r')
-        plt.plot(self.d_dt[window], self.do[window], 'o-', color='r')
-        # plt.scatter(self.d_dt[window],self.do[window], color='r')
+        plt.plot(self.d_dt, self.do, 'o-', color='r')
         plt.ylabel('Dissolved Oxygen (%)', fontsize=14)
         plt.gcf().autofmt_xdate()
         plt.gca().xaxis.set_major_formatter(date_formatter)
         plt.subplot(1,2,2)
-        # plt.plot(self.d_dt[window], moving_average(self.temp[window],mv), 'o-',color= 'c')
-        plt.plot(self.d_dt[window], self.temp[window], 'o-',color= 'c')
+        plt.plot(self.d_dt, self.temp, 'o-',color= 'c')
         plt.ylabel("Water temperature (°F)", fontsize=14)
         plt.gcf().autofmt_xdate()
         plt.gca().xaxis.set_major_formatter(date_formatter)
