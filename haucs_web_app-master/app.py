@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request
-from datetime import datetime
+from datetime import datetime, timedelta
 import firebase
 import json
 import os
@@ -78,13 +78,60 @@ def bmass():
 '''
 Data Source: call this from javascript to get fresh data
 '''
+def get_time_range(period):
+    now = datetime.now()
+    if period == '24h':
+        start_time = now - timedelta(hours=24)
+    elif period == '3d':
+        start_time = now - timedelta(days=3)
+    elif period == '7d':
+        start_time = now - timedelta(days=7)
+    elif period == '2w':
+        start_time = now - timedelta(days=14)
+    elif period == '1m':
+        start_time = now - timedelta(days=30)
+    elif period == '3m':
+        start_time = now - timedelta(days=90)
+    else:
+        start_time = None
+    return start_time
+
 @app.route('/data/' + '<ref>', methods=['GET'])
 def data(ref):
-    db_path = ref.split(' ')
-    db_path = "/".join(db_path)
-    data = db.reference(db_path).get()
-    return jsonify(data)
+    pond_id = request.args.get('pond_id', 'none')
+    period = request.args.get('period', 'all')
 
+    data = None
+    if (pond_id == 'none'): # do the old step
+        db_path = ref.replace(' ', '/')
+        data_ref = db.reference(db_path)
+        data = data_ref.get()
+    else:   # do all ponds
+        with open('static/json/farm_features.json', 'r') as file:
+            json_data = json.load(file)
+        pond_numbers = [feature['properties']['number'] for feature in json_data['features']]
+        data = {}
+
+        for pond_number in pond_numbers:
+            if pond_id != 'all' and pond_id != str(pond_number):
+                continue
+        
+            db_path = f"LH_Farm pond_{pond_number}".replace(' ', '/')
+            pond_data = db.reference(db_path).get()
+            if pond_data:
+                data.update(pond_data)
+
+    if data is None:
+        return jsonify(None)
+
+    start_time = get_time_range(period)
+    if start_time:
+        start_time_str = start_time.strftime('%Y%m%d_%H:%M:%S')
+        filtered_data = {key: value for key, value in data.items() if key >= start_time_str}
+    else:
+        filtered_data = data
+
+    return jsonify(filtered_data)
 
 @app.route('/drone')
 def drone_list():
@@ -140,13 +187,6 @@ def haucs():
         data = file.read()
     
     return render_template('HAUCS.html', data=data, do_values=json.dumps(last_do))
-
-@app.route('/data/' + '<ref>', methods=['GET'])
-def read_pond(ref):
-    db_path = ref.split(' ')
-    db_path = "/".join(db_path)
-    data = db.reference(db_path).get()
-    return jsonify(data)
 
 @app.route('/pond'+'<pond_id>')
 def show_pond(pond_id):

@@ -68,13 +68,12 @@ function nextPage() {
 }
 
 function transformData(jsonDatas, pondId) {
-    console.log("here2");
     const data = [];
     let i;
 
     for (i=0;i<jsonDatas.length;i++){
         const jsonData = jsonDatas[i];
-        console.log(jsonData);
+        // console.log(jsonData);
         if (jsonData === null) {
             console.log("json is null");
             continue;
