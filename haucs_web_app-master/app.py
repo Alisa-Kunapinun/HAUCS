@@ -4,6 +4,7 @@ import firebase
 import json
 import os
 from firebase_admin import db
+import pytz
 
 #create folder structure
 if not os.path.exists('static/graphs'):
@@ -98,6 +99,15 @@ def get_time_range(period):
 
 @app.route('/data/' + '<ref>', methods=['GET'])
 def data(ref):
+    # start = (datetime.now() - timedelta(days=53)).astimezone(pytz.timezone("US/Eastern")).strftime('%Y%m%d_%H:%M:%S')
+    # end = datetime.now().astimezone(pytz.timezone("US/Eastern")).strftime('%Y%m%d_%H:%M:%S')
+
+    # fdata = db.reference('/egg_eye_1/fdetect/').order_by_key().start_at(start).end_at(end).get()
+    # adata = db.reference('/egg_eye_1/adetect/').order_by_key().start_at(start).end_at(end).get()
+    # print("hello")
+    # print(fdata)
+    # print(adata)
+
     pond_id = request.args.get('pond_id', 'none')
     period = request.args.get('period', 'all')
 
